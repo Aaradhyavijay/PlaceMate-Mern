@@ -10,4 +10,7 @@ const applicationSchema = new mongoose.Schema({
   }
 }, { timestamps: true });
 
+// One student can apply to a job only once (enforced by DB)
+applicationSchema.index({ job: 1, student: 1 }, { unique: true });
+
 module.exports = mongoose.model('Application', applicationSchema);

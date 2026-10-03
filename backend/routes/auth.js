@@ -1,7 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const User = require('../models/user');
 
 const router = express.Router();
 
@@ -16,11 +16,14 @@ router.post('/register', async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Admin can't self-register; only student/recruiter allowed
+    const safeRole = role === 'recruiter' ? 'recruiter' : 'student';
+
     const newUser = new User({
       name,
       email,
       password: hashedPassword,
-      role
+      role: safeRole
     });
 
     await newUser.save();

@@ -1,10 +1,11 @@
 const express = require('express');
-const Job = require('../models/Job');
+const Job = require('../models/job');
+const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Create a job (recruiter posts)
-router.post('/', async (req, res) => {
+// Create a job (only recruiter/admin)
+router.post('/', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
     const job = new Job(req.body);
     await job.save();
