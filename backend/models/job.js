@@ -17,7 +17,7 @@ const jobSchema = new mongoose.Schema({
   skillsRequired: [{ type: String }],
   deadline: { type: Date },
   // TODO: switch default to 'pending' when admin approval route is built (Step 4)
-  approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+ approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
   rejectionReason: { type: String },
   postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true }
 }, { timestamps: true });
