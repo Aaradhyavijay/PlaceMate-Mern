@@ -1,5 +1,7 @@
 const express = require('express');
 const Job = require('../models/job');
+const StudentProfile = require('../models/studentProfile');
+const { checkEligibility } = require('../utils/eligibility');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -36,6 +38,18 @@ router.get('/mine', protect, authorize('recruiter', 'admin'), async (req, res) =
   try {
     const jobs = await Job.find({ postedBy: req.user.id }).sort({ createdAt: -1 });
     res.status(200).json(jobs);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Student checks own eligibility for a job
+router.get('/:id/eligibility', protect, authorize('student'), async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    const profile = await StudentProfile.findOne({ user: req.user.id });
+    res.status(200).json(checkEligibility(profile, job));
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }

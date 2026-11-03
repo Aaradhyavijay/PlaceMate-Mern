@@ -1,6 +1,8 @@
 const express = require('express');
 const Application = require('../models/application');
 const Job = require('../models/job');
+const StudentProfile = require('../models/studentProfile');
+const { checkEligibility } = require('../utils/eligibility');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
@@ -21,6 +23,13 @@ router.post('/', protect, authorize('student'), async (req, res) => {
     }
     if (job.deadline && job.deadline < new Date()) {
       return res.status(400).json({ message: 'Application deadline has passed' });
+    }
+
+    // Eligibility (CGPA, branch, backlogs, batch). Skills never block.
+    const profile = await StudentProfile.findOne({ user: student });
+    const result = checkEligibility(profile, job);
+    if (!result.eligible) {
+      return res.status(403).json({ message: 'Not eligible for this job', reasons: result.reasons });
     }
 
     const existing = await Application.findOne({ job: jobId, student });
