@@ -11,21 +11,27 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="flex justify-between items-center px-6 py-4 border-b">
-      <Link to="/" className="font-semibold text-lg">PlaceMate</Link>
+    <nav className="flex justify-between items-center px-6 py-4 bg-chocopie text-cream">
+      <Link to="/" className="font-semibold text-lg text-butter">PlaceMate</Link>
       <div className="flex gap-4 items-center">
         {token ? (
           <>
-            <Link to="/dashboard">Dashboard</Link>
-            <span className="text-sm text-gray-600">{user?.name}</span>
-            <button onClick={handleLogout} className="bg-black text-white px-3 py-1 rounded">
+            <Link to="/dashboard" className="hover:text-butter">Dashboard</Link>
+            {user?.role === 'student' && (
+              <Link to="/profile" className="hover:text-butter">Profile</Link>
+            )}
+            <span className="text-sm text-blue">{user?.name}</span>
+            <button
+              onClick={handleLogout}
+              className="bg-butter text-chocopie font-medium px-3 py-1 rounded hover:bg-blue"
+            >
               Logout
             </button>
           </>
         ) : (
           <>
-            <Link to="/login">Login</Link>
-            <Link to="/register">Register</Link>
+            <Link to="/login" className="hover:text-butter">Login</Link>
+            <Link to="/register" className="hover:text-butter">Register</Link>
           </>
         )}
       </div>

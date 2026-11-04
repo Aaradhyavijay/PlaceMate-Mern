@@ -140,7 +140,7 @@ Content-Type: application/json
 
 {
   "email": "admin@test.com",
-  "password": "123456"
+  "password": "admin123"
 }
 
 
@@ -198,3 +198,80 @@ Authorization: Bearer {{loginAdmin.response.body.token}}
 
 ### Admin Test 6 - Public list shows only approved
 GET http://localhost:5000/api/jobs
+
+
+### App Test 1 - Student applies to REJECTED job (should fail)
+POST http://localhost:5000/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginS.response.body.token}}
+
+{
+  "job": "{{rejectJob.response.body._id}}"
+}
+
+### App Test 2 - Student applies to APPROVED job
+POST http://localhost:5000/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginS.response.body.token}}
+
+{
+  "job": "{{pendingJob.response.body._id}}"
+}
+
+### App Test 3 - Recruiter B views A's job applicants (should fail)
+GET http://localhost:5000/api/applications/job/{{pendingJob.response.body._id}}
+Authorization: Bearer {{loginB.response.body.token}}
+
+
+### Elig Test 1 - Student sets profile
+PUT http://localhost:5000/api/students/profile
+Content-Type: application/json
+Authorization: Bearer {{loginS.response.body.token}}
+
+{
+  "branch": "IT",
+  "graduationYear": 2028,
+  "cgpa": 7.7,
+  "backlogs": 0,
+  "skills": ["React", "JavaScript"]
+}
+
+
+### Elig Test 2 - A creates a strict job
+# @name strictJob
+POST http://localhost:5000/api/jobs
+Content-Type: application/json
+Authorization: Bearer {{loginA.response.body.token}}
+
+{
+  "title": "Strict Job",
+  "company": "Test Co",
+  "description": "High criteria",
+  "location": "Jaipur",
+  "eligibility": {
+    "minCGPA": 8,
+    "branches": ["CSE"],
+    "maxBacklogs": 0,
+    "graduationYear": 2027
+  },
+  "skillsRequired": ["React", "Node"]
+}
+
+
+### Elig Test 3 - Student checks eligibility for strict job
+GET http://localhost:5000/api/jobs/{{strictJob.response.body._id}}/eligibility
+Authorization: Bearer {{loginS.response.body.token}}
+
+
+### Elig Test 4 - Admin approves strict job
+PUT http://localhost:5000/api/admin/jobs/{{strictJob.response.body._id}}/approve
+Authorization: Bearer {{loginAdmin.response.body.token}}
+
+### Elig Test 5 - Student applies to strict job (should be blocked)
+POST http://localhost:5000/api/applications
+Content-Type: application/json
+Authorization: Bearer {{loginS.response.body.token}}
+
+{
+  "job": "{{strictJob.response.body._id}}"
+}

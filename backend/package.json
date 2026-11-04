@@ -10,6 +10,9 @@
 },
   "keywords": [],
   "author": "",
+  "engines": {
+  "node": ">=20"
+},
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {

@@ -1,1 +1,14 @@
 @import "tailwindcss";
+
+@theme {
+  --color-blue: #C4DAE8;
+  --color-butter: #FEEFB8;
+  --color-chocopie: #432F2E;
+  --color-cream: #FFF8DD;
+}
+
+@layer base {
+  body {
+    @apply bg-cream text-chocopie;
+  }
+}

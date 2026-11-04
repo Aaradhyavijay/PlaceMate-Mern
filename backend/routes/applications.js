@@ -60,6 +60,7 @@ router.get('/student/:studentId', protect, authorize('student', 'admin'), async 
 });
 
 // Get applicants of a job (only the recruiter who posted it, or admin)
+// Each applicant comes with their student profile (branch, CGPA, skills, resume...)
 router.get('/job/:jobId', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
     const job = await Job.findById(req.params.jobId);
@@ -67,9 +68,23 @@ router.get('/job/:jobId', protect, authorize('recruiter', 'admin'), async (req, 
     if (!ownsJob(job, req.user)) {
       return res.status(403).json({ message: 'You can only view applicants of your own jobs' });
     }
+
     const applications = await Application.find({ job: req.params.jobId })
-      .populate('student', 'name email');
-    res.status(200).json(applications);
+      .populate('student', 'name email')
+      .lean();
+
+    const studentIds = applications.map((a) => a.student?._id).filter(Boolean);
+    const profiles = await StudentProfile.find({ user: { $in: studentIds } }).lean();
+    const profileByUser = {};
+    profiles.forEach((p) => {
+      profileByUser[String(p.user)] = p;
+    });
+
+    const result = applications.map((a) => ({
+      ...a,
+      profile: profileByUser[String(a.student?._id)] || null,
+    }));
+    res.status(200).json(result);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
