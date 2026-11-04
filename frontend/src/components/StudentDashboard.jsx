@@ -3,8 +3,8 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 const statusStyles = {
-  applied: 'bg-blue text-chocopie',
-  shortlisted: 'bg-butter text-chocopie',
+  applied: 'bg-pink text-navy',
+  shortlisted: 'bg-mauve text-navy',
   rejected: 'bg-red-100 text-red-700',
   selected: 'bg-green-100 text-green-800',
 };
@@ -82,14 +82,14 @@ export default function StudentDashboard() {
     }
   };
 
-  if (loading) return <p className="p-6 text-chocopie">Loading jobs...</p>;
+  if (loading) return <p className="p-6 text-navy">Loading jobs...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <h1 className="text-2xl font-semibold text-chocopie mb-4">Available Jobs</h1>
+      <h1 className="text-2xl font-semibold text-navy mb-4">Available Jobs</h1>
       {jobs.length === 0 ? (
-        <p className="text-sm text-chocopie/60">No jobs available right now.</p>
+        <p className="text-sm text-prune">No jobs available right now.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {jobs.map((job) => {
@@ -100,11 +100,11 @@ export default function StudentDashboard() {
             return (
               <div
                 key={job._id}
-                className="bg-white border border-blue rounded-xl p-4 shadow-sm text-left flex justify-between items-start"
+                className="bg-white border border-pink rounded-xl p-4 shadow-sm text-left flex justify-between items-start"
               >
                 <div>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h2 className="font-semibold text-lg text-chocopie">{job.title}</h2>
+                    <h2 className="font-semibold text-lg text-navy">{job.title}</h2>
                     {elig && (
                       <span
                         className={`text-xs font-medium px-2 py-0.5 rounded-full ${
@@ -117,32 +117,30 @@ export default function StudentDashboard() {
                       </span>
                     )}
                     {elig?.match !== null && elig?.match !== undefined && (
-                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-butter text-chocopie">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-mauve text-navy">
                         {elig.match}% skill match
                       </span>
                     )}
                   </div>
-                  <p className="text-sm text-chocopie/70">
+                  <p className="text-sm text-prune">
                     {job.company}
                     {job.location ? ` · ${job.location}` : ''}
                   </p>
-                  <p className="text-sm text-chocopie/70 capitalize">
+                  <p className="text-sm text-prune capitalize">
                     {job.jobType}
                     {job.package ? ` · ${job.package}` : ''}
                     {job.deadline
                       ? ` · Apply by ${new Date(job.deadline).toLocaleDateString()}`
                       : ''}
                   </p>
-                  <p className="text-sm mt-1">{job.description}</p>
-                  {reqs && (
-                    <p className="text-xs text-chocopie/60 mt-2">Requires: {reqs}</p>
-                  )}
+                  <p className="text-sm text-navy mt-1">{job.description}</p>
+                  {reqs && <p className="text-xs text-prune mt-2">Requires: {reqs}</p>}
                   {job.skillsRequired?.length > 0 && (
                     <div className="flex flex-wrap gap-1 mt-2">
                       {job.skillsRequired.map((s) => (
                         <span
                           key={s}
-                          className="text-xs px-2 py-0.5 rounded-full bg-blue/40 text-chocopie"
+                          className="text-xs px-2 py-0.5 rounded-full bg-pink text-navy"
                         >
                           {s}
                         </span>
@@ -160,7 +158,7 @@ export default function StudentDashboard() {
                 <button
                   onClick={() => handleApply(job._id)}
                   disabled={applyingId === job._id || applied || blocked}
-                  className="bg-butter text-chocopie font-semibold px-4 py-2 rounded hover:bg-blue disabled:opacity-50 disabled:hover:bg-butter shrink-0 ml-4"
+                  className="bg-mauve text-navy font-semibold px-4 py-2 rounded hover:bg-pink disabled:opacity-50 disabled:hover:bg-mauve shrink-0 ml-4"
                 >
                   {applied ? 'Applied' : applyingId === job._id ? 'Applying...' : 'Apply'}
                 </button>
@@ -170,23 +168,23 @@ export default function StudentDashboard() {
         </div>
       )}
 
-      <h1 className="text-2xl font-semibold text-chocopie mb-4 mt-10">My Applications</h1>
+      <h1 className="text-2xl font-semibold text-navy mb-4 mt-10">My Applications</h1>
       {applications.length === 0 ? (
-        <p className="text-sm text-chocopie/60">You haven't applied to any jobs yet.</p>
+        <p className="text-sm text-prune">You haven't applied to any jobs yet.</p>
       ) : (
         <div className="flex flex-col gap-3">
           {applications.map((app) => (
             <div
               key={app._id}
-              className="bg-white border border-blue rounded-xl p-4 shadow-sm flex justify-between items-center"
+              className="bg-white border border-pink rounded-xl p-4 shadow-sm flex justify-between items-center"
             >
               <div>
-                <h2 className="font-semibold text-chocopie">{app.job?.title || 'Job'}</h2>
-                <p className="text-sm text-chocopie/70">{app.job?.company}</p>
+                <h2 className="font-semibold text-navy">{app.job?.title || 'Job'}</h2>
+                <p className="text-sm text-prune">{app.job?.company}</p>
               </div>
               <span
                 className={`text-sm font-medium capitalize px-3 py-1 rounded-full ${
-                  statusStyles[app.status] || 'bg-gray-100'
+                  statusStyles[app.status] || 'bg-pink text-navy'
                 }`}
               >
                 {app.status}

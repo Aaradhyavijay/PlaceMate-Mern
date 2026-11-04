@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import api from '../api/axios';
 
 const inputClass =
-  'border border-blue rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-butter focus:border-chocopie';
+  'border border-pink rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy';
 
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
@@ -29,9 +29,9 @@ export default function Register() {
     <div className="flex justify-center items-center min-h-[calc(100vh-64px)]">
       <form
         onSubmit={handleSubmit}
-        className="w-96 flex flex-col gap-4 bg-white p-8 rounded-xl border border-blue shadow-sm"
+        className="w-96 flex flex-col gap-4 bg-white p-8 rounded-xl border border-pink shadow-sm"
       >
-        <h1 className="text-2xl font-semibold text-chocopie">Register</h1>
+        <h1 className="text-2xl font-semibold text-navy">Register</h1>
         {error && <p className="text-red-600 text-sm">{error}</p>}
         <input
           type="text"
@@ -71,13 +71,13 @@ export default function Register() {
         </select>
         <button
           type="submit"
-          className="bg-butter text-chocopie font-semibold rounded py-2 hover:bg-blue"
+          className="bg-mauve text-navy font-semibold rounded py-2 hover:bg-pink"
         >
           Register
         </button>
-        <p className="text-sm">
+        <p className="text-sm text-prune">
           Already have an account?{' '}
-          <Link to="/login" className="underline font-medium hover:text-chocopie/70">
+          <Link to="/login" className="underline font-medium text-navy hover:text-mauve">
             Login
           </Link>
         </p>

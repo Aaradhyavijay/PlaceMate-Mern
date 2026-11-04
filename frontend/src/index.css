@@ -1,14 +1,21 @@
 @import "tailwindcss";
 
 @theme {
-  --color-blue: #C4DAE8;
-  --color-butter: #FEEFB8;
-  --color-chocopie: #432F2E;
-  --color-cream: #FFF8DD;
+  --color-navy: #0E1627;
+  --color-mauve: #BD8E89;
+  --color-pink: #E5C5C1;
+  --color-prune: #7F6269;
+  --color-blush: #F4E1E0;
 }
 
 @layer base {
   body {
-    @apply bg-cream text-chocopie;
+    @apply bg-blush text-navy;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-prune);
+    opacity: 0.7;
   }
 }

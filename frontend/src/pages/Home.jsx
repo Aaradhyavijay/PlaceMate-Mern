@@ -40,12 +40,12 @@ export default function Home() {
   return (
     <div>
       {/* Hero */}
-      <section className="bg-butter">
+      <section className="bg-pink">
         <div className="max-w-5xl mx-auto px-6 py-20 text-center">
-          <h1 className="text-4xl md:text-5xl font-bold text-chocopie">
+          <h1 className="text-4xl md:text-5xl font-bold text-navy">
             Campus placements, made simple.
           </h1>
-          <p className="mt-4 text-lg text-chocopie/80 max-w-2xl mx-auto">
+          <p className="mt-4 text-lg text-prune max-w-2xl mx-auto">
             PlaceMate connects students, recruiters and placement admins in one place, with
             smart eligibility checks and transparent application tracking.
           </p>
@@ -53,7 +53,7 @@ export default function Home() {
             {token ? (
               <Link
                 to="/dashboard"
-                className="bg-chocopie text-cream font-semibold px-6 py-3 rounded hover:opacity-90"
+                className="bg-navy text-blush font-semibold px-6 py-3 rounded hover:opacity-90"
               >
                 Go to Dashboard
               </Link>
@@ -61,13 +61,13 @@ export default function Home() {
               <>
                 <Link
                   to="/register"
-                  className="bg-chocopie text-cream font-semibold px-6 py-3 rounded hover:opacity-90"
+                  className="bg-navy text-blush font-semibold px-6 py-3 rounded hover:opacity-90"
                 >
                   Get Started
                 </Link>
                 <Link
                   to="/login"
-                  className="bg-white border border-chocopie text-chocopie font-semibold px-6 py-3 rounded hover:bg-blue"
+                  className="bg-blush border border-navy text-navy font-semibold px-6 py-3 rounded hover:bg-mauve"
                 >
                   Login
                 </Link>
@@ -79,20 +79,20 @@ export default function Home() {
 
       {/* Roles */}
       <section className="max-w-5xl mx-auto px-6 py-14">
-        <h2 className="text-2xl font-semibold text-chocopie text-center mb-8">
+        <h2 className="text-2xl font-semibold text-navy text-center mb-8">
           Built for everyone in the placement process
         </h2>
         <div className="grid md:grid-cols-3 gap-4">
           {roles.map((r) => (
             <div
               key={r.title}
-              className="bg-white border border-blue rounded-xl p-6 shadow-sm"
+              className="bg-white border border-pink rounded-xl p-6 shadow-sm"
             >
-              <h3 className="text-lg font-semibold text-chocopie mb-3">{r.title}</h3>
-              <ul className="flex flex-col gap-2 text-sm text-chocopie/80">
+              <h3 className="text-lg font-semibold text-navy mb-3">{r.title}</h3>
+              <ul className="flex flex-col gap-2 text-sm text-prune">
                 {r.points.map((p) => (
                   <li key={p} className="flex gap-2">
-                    <span className="text-chocopie">•</span>
+                    <span className="text-mauve">•</span>
                     <span>{p}</span>
                   </li>
                 ))}
@@ -103,26 +103,26 @@ export default function Home() {
       </section>
 
       {/* How it works */}
-      <section className="bg-blue/40">
+      <section className="bg-pink/40">
         <div className="max-w-5xl mx-auto px-6 py-14">
-          <h2 className="text-2xl font-semibold text-chocopie text-center mb-8">
+          <h2 className="text-2xl font-semibold text-navy text-center mb-8">
             How it works
           </h2>
           <div className="grid md:grid-cols-3 gap-4">
             {steps.map((s) => (
               <div key={s.n} className="text-center">
-                <div className="mx-auto w-10 h-10 rounded-full bg-chocopie text-butter font-semibold flex items-center justify-center">
+                <div className="mx-auto w-10 h-10 rounded-full bg-navy text-mauve font-semibold flex items-center justify-center">
                   {s.n}
                 </div>
-                <h3 className="mt-3 font-semibold text-chocopie">{s.title}</h3>
-                <p className="text-sm text-chocopie/80 mt-1">{s.text}</p>
+                <h3 className="mt-3 font-semibold text-navy">{s.title}</h3>
+                <p className="text-sm text-prune mt-1">{s.text}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      <footer className="text-center text-xs text-chocopie/60 py-6">
+      <footer className="text-center text-xs text-prune py-6">
         © {new Date().getFullYear()} PlaceMate
       </footer>
     </div>

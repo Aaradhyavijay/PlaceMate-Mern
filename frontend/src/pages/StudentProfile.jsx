@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
 const inputClass =
-  'border border-blue rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-butter focus:border-chocopie w-full';
+  'border border-pink rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy w-full';
 
 const emptyForm = {
   phone: '',
@@ -75,13 +75,13 @@ export default function StudentProfile() {
     }
   };
 
-  if (loading) return <p className="p-6 text-chocopie">Loading profile...</p>;
+  if (loading) return <p className="p-6 text-navy">Loading profile...</p>;
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="bg-white border border-blue rounded-xl p-6 shadow-sm max-w-xl">
-        <h1 className="text-2xl font-semibold text-chocopie mb-1">My Profile</h1>
-        <p className="text-sm text-chocopie/60 mb-4">
+      <div className="bg-white border border-pink rounded-xl p-6 shadow-sm max-w-xl">
+        <h1 className="text-2xl font-semibold text-navy mb-1">My Profile</h1>
+        <p className="text-sm text-prune mb-4">
           Job eligibility rules are checked against these details, so keep them accurate.
         </p>
         {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
@@ -89,7 +89,7 @@ export default function StudentProfile() {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
           <div>
-            <label className="text-xs text-chocopie/60">Phone</label>
+            <label className="text-xs text-prune">Phone</label>
             <input
               type="tel"
               name="phone"
@@ -100,7 +100,7 @@ export default function StudentProfile() {
             />
           </div>
           <div>
-            <label className="text-xs text-chocopie/60">Branch</label>
+            <label className="text-xs text-prune">Branch</label>
             <input
               type="text"
               name="branch"
@@ -112,7 +112,7 @@ export default function StudentProfile() {
           </div>
           <div className="grid grid-cols-3 gap-3">
             <div>
-              <label className="text-xs text-chocopie/60">Graduation year</label>
+              <label className="text-xs text-prune">Graduation year</label>
               <input
                 type="number"
                 name="graduationYear"
@@ -123,7 +123,7 @@ export default function StudentProfile() {
               />
             </div>
             <div>
-              <label className="text-xs text-chocopie/60">CGPA</label>
+              <label className="text-xs text-prune">CGPA</label>
               <input
                 type="number"
                 step="0.01"
@@ -137,7 +137,7 @@ export default function StudentProfile() {
               />
             </div>
             <div>
-              <label className="text-xs text-chocopie/60">Backlogs</label>
+              <label className="text-xs text-prune">Backlogs</label>
               <input
                 type="number"
                 min="0"
@@ -150,7 +150,7 @@ export default function StudentProfile() {
             </div>
           </div>
           <div>
-            <label className="text-xs text-chocopie/60">Skills</label>
+            <label className="text-xs text-prune">Skills</label>
             <input
               type="text"
               name="skills"
@@ -161,7 +161,7 @@ export default function StudentProfile() {
             />
           </div>
           <div>
-            <label className="text-xs text-chocopie/60">Resume link</label>
+            <label className="text-xs text-prune">Resume link</label>
             <input
               type="url"
               name="resumeUrl"
@@ -170,11 +170,14 @@ export default function StudentProfile() {
               onChange={handleChange}
               className={inputClass}
             />
+            <p className="text-xs text-prune mt-1">
+              Set the link to "Anyone with the link can view" so recruiters can open it.
+            </p>
           </div>
           <button
             type="submit"
             disabled={saving}
-            className="bg-butter text-chocopie font-semibold rounded py-2 hover:bg-blue disabled:opacity-50"
+            className="bg-mauve text-navy font-semibold rounded py-2 hover:bg-pink disabled:opacity-50"
           >
             {saving ? 'Saving...' : 'Save Profile'}
           </button>

@@ -3,10 +3,10 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 const inputClass =
-  'border border-blue rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-butter focus:border-chocopie';
+  'border border-pink rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy';
 
 const approvalStyles = {
-  pending: 'bg-butter text-chocopie',
+  pending: 'bg-pink text-navy',
   approved: 'bg-green-100 text-green-800',
   rejected: 'bg-red-100 text-red-700',
 };
@@ -131,8 +131,8 @@ export default function RecruiterDashboard() {
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="bg-white border border-blue rounded-xl p-6 shadow-sm mb-8">
-        <h1 className="text-2xl font-semibold text-chocopie mb-4">Post a Job</h1>
+      <div className="bg-white border border-pink rounded-xl p-6 shadow-sm mb-8">
+        <h1 className="text-2xl font-semibold text-navy mb-4">Post a Job</h1>
         {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
         <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-xl">
           <input
@@ -185,7 +185,7 @@ export default function RecruiterDashboard() {
             className={inputClass}
           />
           <div>
-            <label className="text-xs text-chocopie/60">Application deadline</label>
+            <label className="text-xs text-prune">Application deadline</label>
             <input
               type="date"
               name="deadline"
@@ -195,7 +195,7 @@ export default function RecruiterDashboard() {
             />
           </div>
 
-          <p className="text-sm font-medium text-chocopie mt-2">Eligibility criteria</p>
+          <p className="text-sm font-medium text-navy mt-2">Eligibility criteria</p>
           <div className="grid grid-cols-3 gap-3">
             <input
               type="number"
@@ -255,64 +255,64 @@ export default function RecruiterDashboard() {
           <button
             type="submit"
             disabled={submitting}
-            className="bg-butter text-chocopie font-semibold rounded py-2 hover:bg-blue disabled:opacity-50"
+            className="bg-mauve text-navy font-semibold rounded py-2 hover:bg-pink disabled:opacity-50"
           >
             {submitting ? 'Posting...' : 'Post Job'}
           </button>
         </form>
-        <p className="text-xs text-chocopie/60 mt-3">
+        <p className="text-xs text-prune mt-3">
           New jobs are visible to students after admin approval.
         </p>
       </div>
 
-      <h2 className="text-xl font-semibold text-chocopie mb-3">Your Posted Jobs</h2>
+      <h2 className="text-xl font-semibold text-navy mb-3">Your Posted Jobs</h2>
       <div className="flex flex-col gap-3">
         {jobs.length === 0 && (
-          <p className="text-sm text-chocopie/60">You haven't posted any jobs yet.</p>
+          <p className="text-sm text-prune">You haven't posted any jobs yet.</p>
         )}
         {jobs.map((job) => {
           const approval = job.approvalStatus || 'pending';
           return (
-            <div key={job._id} className="bg-white border border-blue rounded-xl p-4 text-left shadow-sm">
+            <div key={job._id} className="bg-white border border-pink rounded-xl p-4 text-left shadow-sm">
               <div className="flex justify-between items-start">
                 <div>
                   <div className="flex items-center gap-2">
-                    <h3 className="font-semibold text-chocopie">{job.title}</h3>
+                    <h3 className="font-semibold text-navy">{job.title}</h3>
                     <span
                       className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${approvalStyles[approval]}`}
                     >
                       {approval}
                     </span>
                   </div>
-                  <p className="text-sm text-chocopie/70">
+                  <p className="text-sm text-prune">
                     {job.company} · {job.location}
                   </p>
-                  <p className="text-sm text-chocopie/70 capitalize">
+                  <p className="text-sm text-prune capitalize">
                     {job.jobType}
                     {job.package ? ` · ${job.package}` : ''}
                     {job.deadline
                       ? ` · Apply by ${new Date(job.deadline).toLocaleDateString()}`
                       : ''}
                   </p>
-                  <p className="text-sm mt-1">{job.description}</p>
+                  <p className="text-sm text-navy mt-1">{job.description}</p>
                   {approval === 'rejected' && job.rejectionReason && (
                     <p className="text-sm text-red-600 mt-1">Reason: {job.rejectionReason}</p>
                   )}
                 </div>
                 <button
                   onClick={() => toggleApplicants(job._id)}
-                  className="text-sm border border-chocopie text-chocopie rounded px-3 py-1 shrink-0 ml-4 hover:bg-butter"
+                  className="text-sm border border-navy text-navy rounded px-3 py-1 shrink-0 ml-4 hover:bg-pink"
                 >
                   {expandedJobId === job._id ? 'Hide Applicants' : 'View Applicants'}
                 </button>
               </div>
 
               {expandedJobId === job._id && (
-                <div className="mt-4 border-t border-blue pt-3">
+                <div className="mt-4 border-t border-pink pt-3">
                   {loadingApplicants ? (
-                    <p className="text-sm text-chocopie/60">Loading applicants...</p>
+                    <p className="text-sm text-prune">Loading applicants...</p>
                   ) : (applicantsByJob[job._id]?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-chocopie/60">No applicants yet.</p>
+                    <p className="text-sm text-prune">No applicants yet.</p>
                   ) : (
                     <div className="flex flex-col gap-2">
                       {applicantsByJob[job._id].map((app) => {
@@ -320,18 +320,18 @@ export default function RecruiterDashboard() {
                         return (
                           <div
                             key={app._id}
-                            className="bg-cream rounded px-3 py-3 flex justify-between items-start gap-4"
+                            className="bg-blush rounded px-3 py-3 flex justify-between items-start gap-4"
                           >
                             <div>
-                              <p className="text-sm font-medium">{app.student?.name}</p>
-                              <p className="text-xs text-chocopie/60">
+                              <p className="text-sm font-medium text-navy">{app.student?.name}</p>
+                              <p className="text-xs text-prune">
                                 {app.student?.email}
                                 {p?.phone ? ` · ${p.phone}` : ''}
                               </p>
 
                               {p ? (
                                 <>
-                                  <p className="text-xs text-chocopie/80 mt-1">
+                                  <p className="text-xs text-navy mt-1">
                                     {[
                                       p.branch && `Branch: ${p.branch}`,
                                       p.graduationYear && `Batch ${p.graduationYear}`,
@@ -348,7 +348,7 @@ export default function RecruiterDashboard() {
                                       {p.skills.map((s) => (
                                         <span
                                           key={s}
-                                          className="text-xs px-2 py-0.5 rounded-full bg-blue/40 text-chocopie"
+                                          className="text-xs px-2 py-0.5 rounded-full bg-pink text-navy"
                                         >
                                           {s}
                                         </span>
@@ -360,16 +360,16 @@ export default function RecruiterDashboard() {
                                       href={p.resumeUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-block mt-2 text-xs font-medium border border-chocopie text-chocopie rounded px-2 py-1 hover:bg-butter"
+                                      className="inline-block mt-2 text-xs font-medium border border-navy text-navy rounded px-2 py-1 hover:bg-mauve"
                                     >
                                       View Resume
                                     </a>
                                   ) : (
-                                    <p className="text-xs text-chocopie/50 mt-1">No resume added</p>
+                                    <p className="text-xs text-prune mt-1">No resume added</p>
                                   )}
                                 </>
                               ) : (
-                                <p className="text-xs text-chocopie/50 mt-1">
+                                <p className="text-xs text-prune mt-1">
                                   This student hasn't filled in their profile yet.
                                 </p>
                               )}
@@ -380,7 +380,7 @@ export default function RecruiterDashboard() {
                               onChange={(e) =>
                                 handleStatusChange(app._id, job._id, e.target.value)
                               }
-                              className="text-sm border border-blue rounded px-2 py-1 bg-white shrink-0"
+                              className="text-sm border border-pink rounded px-2 py-1 bg-white shrink-0"
                             >
                               <option value="applied">Applied</option>
                               <option value="shortlisted">Shortlisted</option>

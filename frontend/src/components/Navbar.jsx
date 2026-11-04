@@ -11,27 +11,27 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="flex justify-between items-center px-6 py-4 bg-chocopie text-cream">
-      <Link to="/" className="font-semibold text-lg text-butter">PlaceMate</Link>
+    <nav className="flex justify-between items-center px-6 py-4 bg-navy text-blush">
+      <Link to="/" className="font-semibold text-lg text-mauve">PlaceMate</Link>
       <div className="flex gap-4 items-center">
         {token ? (
           <>
-            <Link to="/dashboard" className="hover:text-butter">Dashboard</Link>
+            <Link to="/dashboard" className="hover:text-mauve">Dashboard</Link>
             {user?.role === 'student' && (
-              <Link to="/profile" className="hover:text-butter">Profile</Link>
+              <Link to="/profile" className="hover:text-mauve">Profile</Link>
             )}
-            <span className="text-sm text-blue">{user?.name}</span>
+            <span className="text-sm text-pink">{user?.name}</span>
             <button
               onClick={handleLogout}
-              className="bg-butter text-chocopie font-medium px-3 py-1 rounded hover:bg-blue"
+              className="bg-mauve text-navy font-medium px-3 py-1 rounded hover:bg-pink"
             >
               Logout
             </button>
           </>
         ) : (
           <>
-            <Link to="/login" className="hover:text-butter">Login</Link>
-            <Link to="/register" className="hover:text-butter">Register</Link>
+            <Link to="/login" className="hover:text-mauve">Login</Link>
+            <Link to="/register" className="hover:text-mauve">Register</Link>
           </>
         )}
       </div>
