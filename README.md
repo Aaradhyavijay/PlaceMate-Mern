@@ -2,7 +2,7 @@
 
 A full-stack campus placement management platform with three roles: Student, Recruiter and Admin. Built with the MERN stack.
 
-**Live demo:** https://YOUR-VERCEL-URL.vercel.app
+**Live demo:** https://place-mate-mern-olive.vercel.app
 **API:** https://placemate-api-zp5b.onrender.com
 
 > The backend runs on a free Render instance, so the first request after a period of inactivity can take 30-50 seconds.
