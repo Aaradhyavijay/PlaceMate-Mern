@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
+import SkillPicker from '../components/SkillPicker';
 
 const inputClass =
   'border border-pink rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy w-full';
@@ -10,7 +11,7 @@ const emptyForm = {
   graduationYear: '',
   cgpa: '',
   backlogs: '',
-  skills: '',
+  skills: [],
   resumeUrl: '',
 };
 
@@ -32,7 +33,7 @@ export default function StudentProfile() {
           graduationYear: p.graduationYear ?? '',
           cgpa: p.cgpa ?? '',
           backlogs: p.backlogs ?? '',
-          skills: (p.skills || []).join(', '),
+          skills: p.skills || [],
           resumeUrl: p.resumeUrl ?? '',
         });
       } catch (err) {
@@ -61,7 +62,7 @@ export default function StudentProfile() {
         phone: form.phone,
         branch: form.branch,
         resumeUrl: form.resumeUrl,
-        skills: form.skills.split(',').map((s) => s.trim()).filter(Boolean),
+        skills: form.skills,
         ...(form.graduationYear !== '' && { graduationYear: Number(form.graduationYear) }),
         ...(form.cgpa !== '' && { cgpa: Number(form.cgpa) }),
         ...(form.backlogs !== '' && { backlogs: Number(form.backlogs) }),
@@ -149,17 +150,17 @@ export default function StudentProfile() {
               />
             </div>
           </div>
+
           <div>
             <label className="text-xs text-prune">Skills</label>
-            <input
-              type="text"
-              name="skills"
-              placeholder="Comma separated (e.g. React, Node.js, C++)"
-              value={form.skills}
-              onChange={handleChange}
-              className={inputClass}
-            />
+            <div className="mt-1">
+              <SkillPicker
+                value={form.skills}
+                onChange={(skills) => setForm({ ...form, skills })}
+              />
+            </div>
           </div>
+
           <div>
             <label className="text-xs text-prune">Resume link</label>
             <input
