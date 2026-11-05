@@ -1,9 +1,6 @@
 import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
-import { useAuth } from '../context/AuthContext';
-
-const inputClass =
-  'border border-pink rounded px-3 py-2 bg-white focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy';
 
 const approvalStyles = {
   pending: 'bg-pink text-navy',
@@ -11,32 +8,23 @@ const approvalStyles = {
   rejected: 'bg-red-100 text-red-700',
 };
 
-const emptyForm = {
-  title: '',
-  company: '',
-  description: '',
-  location: '',
-  jobType: 'full-time',
-  package: '',
-  deadline: '',
-  minCGPA: '',
-  maxBacklogs: '',
-  graduationYear: '',
-  branches: '',
-  skillsRequired: '',
-};
-
-const splitList = (s) =>
-  s.split(',').map((x) => x.trim()).filter(Boolean);
-
 const isHttpUrl = (u) => typeof u === 'string' && /^https?:\/\//i.test(u);
+const isClosed = (job) => job.deadline && new Date(job.deadline) < new Date();
+
+function Stat({ label, value }) {
+  return (
+    <div className="bg-white border border-pink rounded-xl p-4 shadow-sm">
+      <p className="text-sm text-prune">{label}</p>
+      <p className="text-3xl font-bold text-navy mt-1">{String(value).padStart(2, '0')}</p>
+    </div>
+  );
+}
 
 export default function RecruiterDashboard() {
-  const { user } = useAuth();
+  const navigate = useNavigate();
   const [jobs, setJobs] = useState([]);
-  const [form, setForm] = useState(emptyForm);
   const [error, setError] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const [busyJobId, setBusyJobId] = useState(null);
 
   const [expandedJobId, setExpandedJobId] = useState(null);
   const [applicantsByJob, setApplicantsByJob] = useState({});
@@ -55,43 +43,6 @@ export default function RecruiterDashboard() {
   useEffect(() => {
     fetchJobs();
   }, []);
-
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    setError('');
-    try {
-      const postedBy = user?._id || user?.id;
-      const payload = {
-        title: form.title,
-        company: form.company,
-        description: form.description,
-        location: form.location,
-        jobType: form.jobType,
-        package: form.package,
-        postedBy,
-        skillsRequired: splitList(form.skillsRequired),
-        eligibility: {
-          minCGPA: form.minCGPA === '' ? 0 : Number(form.minCGPA),
-          branches: splitList(form.branches),
-          ...(form.maxBacklogs !== '' && { maxBacklogs: Number(form.maxBacklogs) }),
-          ...(form.graduationYear !== '' && { graduationYear: Number(form.graduationYear) }),
-        },
-        ...(form.deadline && { deadline: form.deadline }),
-      };
-      await api.post('/jobs', payload);
-      setForm(emptyForm);
-      fetchJobs();
-    } catch (err) {
-      setError(err.response?.data?.message || 'Failed to post job');
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
   const toggleApplicants = async (jobId) => {
     if (expandedJobId === jobId) {
@@ -129,160 +80,91 @@ export default function RecruiterDashboard() {
     }
   };
 
+  const handleClose = async (job) => {
+    if (!window.confirm(`Close applications for "${job.title}"? Students will no longer be able to apply.`)) return;
+    setBusyJobId(job._id);
+    try {
+      const deadline = new Date().toISOString();
+      await api.put(`/jobs/${job._id}`, { deadline });
+      setJobs((prev) => prev.map((j) => (j._id === job._id ? { ...j, deadline } : j)));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to close job');
+    } finally {
+      setBusyJobId(null);
+    }
+  };
+
+  const handleDelete = async (job) => {
+    if (!window.confirm(`Delete "${job.title}" and all its applications? This cannot be undone.`)) return;
+    setBusyJobId(job._id);
+    try {
+      await api.delete(`/jobs/${job._id}`);
+      setJobs((prev) => prev.filter((j) => j._id !== job._id));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Failed to delete job');
+    } finally {
+      setBusyJobId(null);
+    }
+  };
+
+  const count = (s) => jobs.filter((j) => (j.approvalStatus || 'pending') === s).length;
+
   return (
     <div className="p-6 max-w-5xl mx-auto">
-      <div className="bg-white border border-pink rounded-xl p-6 shadow-sm mb-8">
-        <h1 className="text-2xl font-semibold text-navy mb-4">Post a Job</h1>
-        {error && <p className="text-red-600 text-sm mb-2">{error}</p>}
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3 max-w-xl">
-          <input
-            type="text"
-            name="title"
-            placeholder="Job Title"
-            value={form.title}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          />
-          <input
-            type="text"
-            name="company"
-            placeholder="Company"
-            value={form.company}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          />
-          <input
-            type="text"
-            name="location"
-            placeholder="Location"
-            value={form.location}
-            onChange={handleChange}
-            className={inputClass}
-            required
-          />
-          <select
-            name="jobType"
-            value={form.jobType}
-            onChange={handleChange}
-            className={inputClass}
-          >
-            <option value="full-time">Full-time</option>
-            <option value="internship">Internship</option>
-            <option value="part-time">Part-time</option>
-          </select>
-          <input
-            type="text"
-            name="package"
-            placeholder={
-              form.jobType === 'internship'
-                ? 'Stipend (e.g. ₹20,000/month)'
-                : 'Salary (e.g. 12 LPA)'
-            }
-            value={form.package}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <div>
-            <label className="text-xs text-prune">Application deadline</label>
-            <input
-              type="date"
-              name="deadline"
-              value={form.deadline}
-              onChange={handleChange}
-              className={`${inputClass} w-full`}
-            />
-          </div>
-
-          <p className="text-sm font-medium text-navy mt-2">Eligibility criteria</p>
-          <div className="grid grid-cols-3 gap-3">
-            <input
-              type="number"
-              step="0.1"
-              min="0"
-              max="10"
-              name="minCGPA"
-              placeholder="Min CGPA"
-              value={form.minCGPA}
-              onChange={handleChange}
-              className={inputClass}
-            />
-            <input
-              type="number"
-              min="0"
-              name="maxBacklogs"
-              placeholder="Max backlogs"
-              value={form.maxBacklogs}
-              onChange={handleChange}
-              className={inputClass}
-            />
-            <input
-              type="number"
-              name="graduationYear"
-              placeholder="Grad year"
-              value={form.graduationYear}
-              onChange={handleChange}
-              className={inputClass}
-            />
-          </div>
-          <input
-            type="text"
-            name="branches"
-            placeholder="Allowed branches, comma separated (e.g. IT, CSE)"
-            value={form.branches}
-            onChange={handleChange}
-            className={inputClass}
-          />
-          <input
-            type="text"
-            name="skillsRequired"
-            placeholder="Skills required, comma separated (e.g. React, Node.js)"
-            value={form.skillsRequired}
-            onChange={handleChange}
-            className={inputClass}
-          />
-
-          <textarea
-            name="description"
-            placeholder="Description"
-            value={form.description}
-            onChange={handleChange}
-            className={inputClass}
-            rows={3}
-            required
-          />
-          <button
-            type="submit"
-            disabled={submitting}
-            className="bg-mauve text-navy font-semibold rounded py-2 hover:bg-pink disabled:opacity-50"
-          >
-            {submitting ? 'Posting...' : 'Post Job'}
-          </button>
-        </form>
-        <p className="text-xs text-prune mt-3">
-          New jobs are visible to students after admin approval.
-        </p>
+      <div className="flex justify-between items-start gap-3 mb-5">
+        <div>
+          <h1 className="text-2xl font-semibold text-navy">Recruiter Dashboard</h1>
+          <p className="text-sm text-prune">Manage your jobs and applicants.</p>
+        </div>
+        <Link
+          to="/post-job"
+          className="bg-navy text-blush font-semibold px-4 py-2 rounded hover:opacity-90 shrink-0"
+        >
+          + Post a Job
+        </Link>
       </div>
 
-      <h2 className="text-xl font-semibold text-navy mb-3">Your Posted Jobs</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+        <Stat label="Jobs posted" value={jobs.length} />
+        <Stat label="Approved" value={count('approved')} />
+        <Stat label="Pending approval" value={count('pending')} />
+        <Stat label="Rejected" value={count('rejected')} />
+      </div>
+
+      {error && <p className="text-red-600 text-sm mb-3">{error}</p>}
+
+      <h2 className="text-lg font-semibold text-navy mb-3">Your Jobs</h2>
       <div className="flex flex-col gap-3">
         {jobs.length === 0 && (
           <p className="text-sm text-prune">You haven't posted any jobs yet.</p>
         )}
         {jobs.map((job) => {
           const approval = job.approvalStatus || 'pending';
+          const closed = isClosed(job);
+          const busy = busyJobId === job._id;
           return (
-            <div key={job._id} className="bg-white border border-pink rounded-xl p-4 text-left shadow-sm">
-              <div className="flex justify-between items-start">
+            <div
+              key={job._id}
+              className="bg-white border border-pink rounded-xl p-4 text-left shadow-sm"
+            >
+              <div className="flex justify-between items-start gap-4">
                 <div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="font-semibold text-navy">{job.title}</h3>
                     <span
                       className={`text-xs font-medium px-2 py-0.5 rounded-full capitalize ${approvalStyles[approval]}`}
                     >
                       {approval}
                     </span>
+                    {approval === 'approved' && (
+                      <span
+                        className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+                          closed ? 'bg-pink text-prune' : 'bg-navy text-blush'
+                        }`}
+                      >
+                        {closed ? 'Closed' : 'Open'}
+                      </span>
+                    )}
                   </div>
                   <p className="text-sm text-prune">
                     {job.company} · {job.location}
@@ -291,7 +173,7 @@ export default function RecruiterDashboard() {
                     {job.jobType}
                     {job.package ? ` · ${job.package}` : ''}
                     {job.deadline
-                      ? ` · Apply by ${new Date(job.deadline).toLocaleDateString()}`
+                      ? ` · ${closed ? 'Closed' : 'Apply by'} ${new Date(job.deadline).toLocaleDateString()}`
                       : ''}
                   </p>
                   <p className="text-sm text-navy mt-1">{job.description}</p>
@@ -299,11 +181,37 @@ export default function RecruiterDashboard() {
                     <p className="text-sm text-red-600 mt-1">Reason: {job.rejectionReason}</p>
                   )}
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2 mt-3">
                 <button
                   onClick={() => toggleApplicants(job._id)}
-                  className="text-sm border border-navy text-navy rounded px-3 py-1 shrink-0 ml-4 hover:bg-pink"
+                  className="text-sm bg-navy text-blush rounded px-3 py-1 hover:opacity-90"
                 >
                   {expandedJobId === job._id ? 'Hide Applicants' : 'View Applicants'}
+                </button>
+                <button
+                  onClick={() => navigate(`/post-job/${job._id}`)}
+                  disabled={busy}
+                  className="text-sm border border-navy text-navy rounded px-3 py-1 hover:bg-pink disabled:opacity-50"
+                >
+                  Edit
+                </button>
+                {!closed && (
+                  <button
+                    onClick={() => handleClose(job)}
+                    disabled={busy}
+                    className="text-sm border border-navy text-navy rounded px-3 py-1 hover:bg-pink disabled:opacity-50"
+                  >
+                    Close
+                  </button>
+                )}
+                <button
+                  onClick={() => handleDelete(job)}
+                  disabled={busy}
+                  className="text-sm border border-red-300 text-red-600 rounded px-3 py-1 hover:bg-red-50 disabled:opacity-50"
+                >
+                  Delete
                 </button>
               </div>
 

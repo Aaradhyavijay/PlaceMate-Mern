@@ -8,7 +8,10 @@ const menu = {
     { to: '/dashboard', label: 'Dashboard' },
     { to: '/profile', label: 'My Profile' },
   ],
-  recruiter: [{ to: '/dashboard', label: 'Dashboard' }],
+  recruiter: [
+    { to: '/dashboard', label: 'Dashboard' },
+    { to: '/post-job', label: 'Post a Job' },
+  ],
   admin: [{ to: '/dashboard', label: 'Dashboard' }],
 };
 

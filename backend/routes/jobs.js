@@ -1,5 +1,6 @@
 const express = require('express');
 const Job = require('../models/job');
+const Application = require('../models/application');
 const StudentProfile = require('../models/studentProfile');
 const { checkEligibility } = require('../utils/eligibility');
 const { protect, authorize } = require('../middleware/auth');
@@ -21,11 +22,16 @@ router.post('/', protect, authorize('recruiter', 'admin'), async (req, res) => {
   }
 });
 
-// Get all approved jobs (legacy jobs without the field are treated as approved)
+// Get all open jobs: approved (legacy jobs without the field count as approved)
+// and not past their deadline
 router.get('/', async (req, res) => {
   try {
+    const now = new Date();
     const jobs = await Job.find({
-      $or: [{ approvalStatus: 'approved' }, { approvalStatus: { $exists: false } }]
+      $and: [
+        { $or: [{ approvalStatus: 'approved' }, { approvalStatus: { $exists: false } }] },
+        { $or: [{ deadline: { $exists: false } }, { deadline: null }, { deadline: { $gte: now } }] }
+      ]
     }).sort({ createdAt: -1 });
     res.status(200).json(jobs);
   } catch (err) {
@@ -86,7 +92,7 @@ router.put('/:id', protect, authorize('recruiter', 'admin'), async (req, res) =>
   }
 });
 
-// Delete a job (owner or admin)
+// Delete a job and its applications (owner or admin)
 router.delete('/:id', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
     const job = await Job.findById(req.params.id);
@@ -94,6 +100,7 @@ router.delete('/:id', protect, authorize('recruiter', 'admin'), async (req, res)
     if (req.user.role !== 'admin' && job.postedBy.toString() !== req.user.id) {
       return res.status(403).json({ message: 'Not your job' });
     }
+    await Application.deleteMany({ job: job._id });
     await job.deleteOne();
     res.status(200).json({ message: 'Job deleted' });
   } catch (err) {

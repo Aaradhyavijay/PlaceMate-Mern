@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
+import PostJob from './pages/PostJob';
 import StudentProfile from './pages/StudentProfile';
 
 // Public pages keep the top navbar
@@ -37,6 +38,8 @@ function App() {
       >
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/profile" element={<StudentProfile />} />
+        <Route path="/post-job" element={<PostJob />} />
+        <Route path="/post-job/:id" element={<PostJob />} />
       </Route>
     </Routes>
   );
