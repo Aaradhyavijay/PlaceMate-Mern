@@ -1,13 +1,8 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
-
-const statusStyles = {
-  applied: 'bg-pink text-navy',
-  shortlisted: 'bg-mauve text-navy',
-  rejected: 'bg-red-100 text-red-700',
-  selected: 'bg-green-100 text-green-800',
-};
+import ApplicationCard from './ApplicationCard';
+import { formatWhen, isUrl, modeLabel, upcomingRounds } from '../utils/rounds';
 
 // The API returns skill info nested under `skills`; other shapes are read defensively
 const normalizeEligibility = (d = {}) => {
@@ -105,7 +100,9 @@ export default function StudentDashboard() {
       const studentId = user?._id || user?.id;
       const res = await api.post('/applications', { job: jobId, student: studentId });
       setAppliedIds((prev) => [...prev, jobId]);
-      setApplications((prev) => [...prev, res.data]);
+      // The apply response has no populated job, so attach it from the jobs list
+      const job = jobs.find((j) => j._id === jobId);
+      setApplications((prev) => [...prev, { ...res.data, job }]);
     } catch (err) {
       const data = err.response?.data;
       alert(data?.reasons?.length ? data.reasons.join('\n') : data?.message || 'Failed to apply');
@@ -127,6 +124,7 @@ export default function StudentDashboard() {
 
   const shortlisted = applications.filter((a) => a.status === 'shortlisted').length;
   const offers = applications.filter((a) => a.status === 'selected').length;
+  const upcoming = upcomingRounds(applications);
 
   return (
     <div className="p-6 max-w-5xl mx-auto">
@@ -134,12 +132,55 @@ export default function StudentDashboard() {
       <p className="text-sm text-prune mb-5">Here is your placement overview.</p>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-8">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-8">
         <Stat label="Applications" value={applications.length} />
         <Stat label="Shortlisted" value={shortlisted} />
+        <Stat label="Upcoming rounds" value={upcoming.length} />
         <Stat label="Offers" value={offers} />
         <Stat label="Jobs you can apply to" value={openEligible.length} />
       </div>
+
+      {/* Upcoming rounds */}
+      <h2 className="text-lg font-semibold text-navy mb-3">Upcoming rounds</h2>
+      {upcoming.length === 0 ? (
+        <p className="text-sm text-prune mb-8">
+          No rounds scheduled yet. When a recruiter schedules a test or interview, it will
+          show up here.
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2 mb-8">
+          {upcoming.map((r) => (
+            <div
+              key={r._id}
+              className="bg-white border border-pink rounded-xl p-3 shadow-sm flex justify-between items-start gap-3 text-left"
+            >
+              <div>
+                <p className="font-medium text-navy">{r.name}</p>
+                <p className="text-xs text-prune">
+                  {r.job?.title} · {r.job?.company}
+                </p>
+              </div>
+              <div className="text-right text-xs text-prune">
+                <p className="font-medium text-navy">{formatWhen(r.scheduledAt)}</p>
+                <p>{modeLabel(r.mode)}</p>
+                {r.location &&
+                  (isUrl(r.location) ? (
+                    <a
+                      href={r.location}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="underline text-navy"
+                    >
+                      Join link
+                    </a>
+                  ) : (
+                    <p>{r.location}</p>
+                  ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Recommended */}
       <h2 className="text-lg font-semibold text-navy mb-3">Recommended for you</h2>
@@ -303,22 +344,7 @@ export default function StudentDashboard() {
       ) : (
         <div className="flex flex-col gap-3">
           {applications.map((app) => (
-            <div
-              key={app._id}
-              className="bg-white border border-pink rounded-xl p-4 shadow-sm flex justify-between items-center"
-            >
-              <div>
-                <h3 className="font-semibold text-navy">{app.job?.title || 'Job'}</h3>
-                <p className="text-sm text-prune">{app.job?.company}</p>
-              </div>
-              <span
-                className={`text-sm font-medium capitalize px-3 py-1 rounded-full ${
-                  statusStyles[app.status] || 'bg-pink text-navy'
-                }`}
-              >
-                {app.status}
-              </span>
-            </div>
+            <ApplicationCard key={app._id} app={app} />
           ))}
         </div>
       )}

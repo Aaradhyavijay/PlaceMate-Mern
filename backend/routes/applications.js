@@ -90,7 +90,7 @@ router.get('/job/:jobId', protect, authorize('recruiter', 'admin'), async (req, 
   }
 });
 
-// Update application status (only the job's recruiter, or admin)
+// Update application status and note (only the job's recruiter, or admin)
 router.put('/:id', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
     const application = await Application.findById(req.params.id);
@@ -111,6 +111,106 @@ router.put('/:id', protect, authorize('recruiter', 'admin'), async (req, res) =>
     if (err.name === 'ValidationError') {
       return res.status(400).json({ message: 'Invalid status value', error: err.message });
     }
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// ---------- Recruitment rounds ----------
+
+const ROUND_MODES = ['online', 'offline'];
+const ROUND_RESULTS = ['scheduled', 'passed', 'failed'];
+
+// Validates round fields. `partial` = update (only given fields are checked)
+function readRound(body, partial) {
+  const out = {};
+  if (!partial || body.name !== undefined) {
+    const name = String(body.name || '').trim();
+    if (!name) return { error: 'Round name is required' };
+    out.name = name.slice(0, 60);
+  }
+  if (body.scheduledAt !== undefined) {
+    if (!body.scheduledAt) {
+      out.scheduledAt = null;
+    } else {
+      const d = new Date(body.scheduledAt);
+      if (isNaN(d.getTime())) return { error: 'Invalid date' };
+      out.scheduledAt = d;
+    }
+  }
+  if (body.mode !== undefined) {
+    if (!ROUND_MODES.includes(body.mode)) return { error: 'Invalid mode' };
+    out.mode = body.mode;
+  }
+  if (body.location !== undefined) {
+    out.location = String(body.location).trim().slice(0, 300);
+  }
+  if (body.result !== undefined) {
+    if (!ROUND_RESULTS.includes(body.result)) return { error: 'Invalid result' };
+    out.result = body.result;
+  }
+  return { fields: out };
+}
+
+// Loads an application the current user may manage (the job's recruiter, or admin)
+async function loadManagedApplication(req, res) {
+  const application = await Application.findById(req.params.id);
+  if (!application) {
+    res.status(404).json({ message: 'Application not found' });
+    return null;
+  }
+  const job = await Job.findById(application.job);
+  if (!job || !ownsJob(job, req.user)) {
+    res.status(403).json({ message: 'You can only manage applications of your own jobs' });
+    return null;
+  }
+  return application;
+}
+
+// Add a round (moves an "applied" application to "shortlisted")
+router.post('/:id/rounds', protect, authorize('recruiter', 'admin'), async (req, res) => {
+  try {
+    const application = await loadManagedApplication(req, res);
+    if (!application) return;
+    const { error, fields } = readRound(req.body, false);
+    if (error) return res.status(400).json({ message: error });
+    application.rounds.push(fields);
+    if (application.status === 'applied') application.status = 'shortlisted';
+    await application.save();
+    res.status(201).json(application);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Update a round (result, date, mode, location, name)
+router.put('/:id/rounds/:roundId', protect, authorize('recruiter', 'admin'), async (req, res) => {
+  try {
+    const application = await loadManagedApplication(req, res);
+    if (!application) return;
+    const round = application.rounds.id(req.params.roundId);
+    if (!round) return res.status(404).json({ message: 'Round not found' });
+    const { error, fields } = readRound(req.body, true);
+    if (error) return res.status(400).json({ message: error });
+    round.set(fields);
+    await application.save();
+    res.status(200).json(application);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Remove a round
+router.delete('/:id/rounds/:roundId', protect, authorize('recruiter', 'admin'), async (req, res) => {
+  try {
+    const application = await loadManagedApplication(req, res);
+    if (!application) return;
+    if (!application.rounds.id(req.params.roundId)) {
+      return res.status(404).json({ message: 'Round not found' });
+    }
+    application.rounds.pull(req.params.roundId);
+    await application.save();
+    res.status(200).json(application);
+  } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
   }
 });

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api/axios';
+import RoundsManager from './RoundsManager';
 
 const approvalStyles = {
   pending: 'bg-pink text-navy',
@@ -107,6 +108,16 @@ export default function RecruiterDashboard() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  // Replace status and rounds of one applicant with the server's version
+  const mergeApplication = (jobId, updated) => {
+    setApplicantsByJob((prev) => ({
+      ...prev,
+      [jobId]: prev[jobId].map((a) =>
+        a._id === updated._id ? { ...a, status: updated.status, rounds: updated.rounds } : a
+      ),
+    }));
   };
 
   const handleClose = async (job) => {
@@ -371,6 +382,12 @@ export default function RecruiterDashboard() {
                                 </button>
                               )}
                             </div>
+
+                            {/* Test and interview rounds */}
+                            <RoundsManager
+                              app={app}
+                              onUpdate={(u) => mergeApplication(job._id, u)}
+                            />
                           </div>
                         );
                       })}
