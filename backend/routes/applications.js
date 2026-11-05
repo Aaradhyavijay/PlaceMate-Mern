@@ -101,7 +101,10 @@ router.put('/:id', protect, authorize('recruiter', 'admin'), async (req, res) =>
       return res.status(403).json({ message: 'You can only update applications of your own jobs' });
     }
 
-    application.status = req.body.status;
+    if (req.body.status) application.status = req.body.status;
+    if (typeof req.body.note === 'string') {
+      application.note = req.body.note.trim().slice(0, 500);
+    }
     await application.save();
     res.status(200).json(application);
   } catch (err) {

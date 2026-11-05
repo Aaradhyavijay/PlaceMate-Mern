@@ -7,7 +7,8 @@ const applicationSchema = new mongoose.Schema({
     type: String,
     enum: ['applied', 'shortlisted', 'interview', 'rejected', 'selected'],
     default: 'applied'
-  }
+  },
+  note: { type: String, trim: true, maxlength: 500 },
 }, { timestamps: true });
 
 // One student can apply to a job only once (enforced by DB)

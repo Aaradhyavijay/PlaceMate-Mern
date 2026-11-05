@@ -11,6 +11,13 @@ const approvalStyles = {
 const isHttpUrl = (u) => typeof u === 'string' && /^https?:\/\//i.test(u);
 const isClosed = (job) => job.deadline && new Date(job.deadline) < new Date();
 
+// WhatsApp link; a 10 digit number is assumed to be an Indian number
+const waLink = (phone) => {
+  const d = String(phone || '').replace(/\D/g, '');
+  if (!d) return null;
+  return `https://wa.me/${d.length === 10 ? `91${d}` : d}`;
+};
+
 function Stat({ label, value }) {
   return (
     <div className="bg-white border border-pink rounded-xl p-4 shadow-sm">
@@ -30,6 +37,7 @@ export default function RecruiterDashboard() {
   const [applicantsByJob, setApplicantsByJob] = useState({});
   const [loadingApplicants, setLoadingApplicants] = useState(false);
   const [updatingId, setUpdatingId] = useState(null);
+  const [noteDrafts, setNoteDrafts] = useState({});
 
   const fetchJobs = async () => {
     try {
@@ -75,6 +83,27 @@ export default function RecruiterDashboard() {
       }));
     } catch (err) {
       alert('Failed to update status');
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const saveNote = async (app, jobId) => {
+    const note = noteDrafts[app._id] ?? app.note ?? '';
+    setUpdatingId(app._id);
+    try {
+      await api.put(`/applications/${app._id}`, { status: app.status, note });
+      setApplicantsByJob((prev) => ({
+        ...prev,
+        [jobId]: prev[jobId].map((a) => (a._id === app._id ? { ...a, note } : a)),
+      }));
+      setNoteDrafts((d) => {
+        const next = { ...d };
+        delete next[app._id];
+        return next;
+      });
+    } catch (err) {
+      alert('Failed to save note');
     } finally {
       setUpdatingId(null);
     }
@@ -225,76 +254,123 @@ export default function RecruiterDashboard() {
                     <div className="flex flex-col gap-2">
                       {applicantsByJob[job._id].map((app) => {
                         const p = app.profile;
+                        const wa = waLink(p?.phone);
+                        const draft = noteDrafts[app._id];
+                        const noteValue = draft ?? app.note ?? '';
+                        const noteChanged = draft !== undefined && draft !== (app.note ?? '');
                         return (
-                          <div
-                            key={app._id}
-                            className="bg-blush rounded px-3 py-3 flex justify-between items-start gap-4"
-                          >
-                            <div>
-                              <p className="text-sm font-medium text-navy">{app.student?.name}</p>
-                              <p className="text-xs text-prune">
-                                {app.student?.email}
-                                {p?.phone ? ` · ${p.phone}` : ''}
-                              </p>
+                          <div key={app._id} className="bg-blush rounded px-3 py-3">
+                            <div className="flex justify-between items-start gap-4">
+                              <div>
+                                <p className="text-sm font-medium text-navy">
+                                  {app.student?.name}
+                                </p>
+                                <p className="text-xs text-prune">
+                                  {app.student?.email}
+                                  {p?.phone ? ` · ${p.phone}` : ''}
+                                </p>
 
-                              {p ? (
-                                <>
-                                  <p className="text-xs text-navy mt-1">
-                                    {[
-                                      p.branch && `Branch: ${p.branch}`,
-                                      p.graduationYear && `Batch ${p.graduationYear}`,
-                                      p.cgpa !== undefined && p.cgpa !== null && `CGPA ${p.cgpa}`,
-                                      p.backlogs !== undefined &&
-                                        p.backlogs !== null &&
-                                        `${p.backlogs} backlogs`,
-                                    ]
-                                      .filter(Boolean)
-                                      .join(' · ')}
+                                {p ? (
+                                  <>
+                                    <p className="text-xs text-navy mt-1">
+                                      {[
+                                        p.branch && `Branch: ${p.branch}`,
+                                        p.graduationYear && `Batch ${p.graduationYear}`,
+                                        p.cgpa !== undefined && p.cgpa !== null && `CGPA ${p.cgpa}`,
+                                        p.backlogs !== undefined &&
+                                          p.backlogs !== null &&
+                                          `${p.backlogs} backlogs`,
+                                      ]
+                                        .filter(Boolean)
+                                        .join(' · ')}
+                                    </p>
+                                    {p.skills?.length > 0 && (
+                                      <div className="flex flex-wrap gap-1 mt-1">
+                                        {p.skills.map((s) => (
+                                          <span
+                                            key={s}
+                                            className="text-xs px-2 py-0.5 rounded-full bg-pink text-navy"
+                                          >
+                                            {s}
+                                          </span>
+                                        ))}
+                                      </div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <p className="text-xs text-prune mt-1">
+                                    This student hasn't filled in their profile yet.
                                   </p>
-                                  {p.skills?.length > 0 && (
-                                    <div className="flex flex-wrap gap-1 mt-1">
-                                      {p.skills.map((s) => (
-                                        <span
-                                          key={s}
-                                          className="text-xs px-2 py-0.5 rounded-full bg-pink text-navy"
-                                        >
-                                          {s}
-                                        </span>
-                                      ))}
-                                    </div>
-                                  )}
-                                  {isHttpUrl(p.resumeUrl) ? (
+                                )}
+
+                                <div className="flex flex-wrap gap-2 mt-2">
+                                  {isHttpUrl(p?.resumeUrl) && (
                                     <a
                                       href={p.resumeUrl}
                                       target="_blank"
                                       rel="noopener noreferrer"
-                                      className="inline-block mt-2 text-xs font-medium border border-navy text-navy rounded px-2 py-1 hover:bg-mauve"
+                                      className="text-xs font-medium border border-navy text-navy rounded px-2 py-1 hover:bg-mauve"
                                     >
                                       View Resume
                                     </a>
-                                  ) : (
-                                    <p className="text-xs text-prune mt-1">No resume added</p>
                                   )}
-                                </>
-                              ) : (
-                                <p className="text-xs text-prune mt-1">
-                                  This student hasn't filled in their profile yet.
-                                </p>
+                                  {app.student?.email && (
+                                    <a
+                                      href={`mailto:${app.student.email}`}
+                                      className="text-xs font-medium border border-navy text-navy rounded px-2 py-1 hover:bg-mauve"
+                                    >
+                                      Email
+                                    </a>
+                                  )}
+                                  {wa && (
+                                    <a
+                                      href={wa}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs font-medium border border-navy text-navy rounded px-2 py-1 hover:bg-mauve"
+                                    >
+                                      WhatsApp
+                                    </a>
+                                  )}
+                                </div>
+                              </div>
+                              <select
+                                value={app.status}
+                                disabled={updatingId === app._id}
+                                onChange={(e) =>
+                                  handleStatusChange(app._id, job._id, e.target.value)
+                                }
+                                className="text-sm border border-pink rounded px-2 py-1 bg-white shrink-0"
+                              >
+                                <option value="applied">Applied</option>
+                                <option value="shortlisted">Shortlisted</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="selected">Selected</option>
+                              </select>
+                            </div>
+
+                            {/* Note the student sees on their dashboard */}
+                            <div className="mt-3 flex flex-col gap-2">
+                              <textarea
+                                value={noteValue}
+                                maxLength={500}
+                                onChange={(e) =>
+                                  setNoteDrafts((d) => ({ ...d, [app._id]: e.target.value }))
+                                }
+                                rows={2}
+                                placeholder="Message for the student (e.g. interview date and link, next steps)"
+                                className="border border-pink rounded px-3 py-2 bg-white text-sm focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy"
+                              />
+                              {noteChanged && (
+                                <button
+                                  onClick={() => saveNote(app, job._id)}
+                                  disabled={updatingId === app._id}
+                                  className="self-start text-sm bg-mauve text-navy font-medium px-3 py-1 rounded hover:bg-pink disabled:opacity-50"
+                                >
+                                  Save note
+                                </button>
                               )}
                             </div>
-                            <select
-                              value={app.status}
-                              disabled={updatingId === app._id}
-                              onChange={(e) =>
-                                handleStatusChange(app._id, job._id, e.target.value)
-                              }
-                              className="text-sm border border-pink rounded px-2 py-1 bg-white shrink-0"
-                            >
-                              <option value="applied">Applied</option>
-                              <option value="shortlisted">Shortlisted</option>
-                              <option value="rejected">Rejected</option>
-                              <option value="selected">Selected</option>
-                            </select>
                           </div>
                         );
                       })}
