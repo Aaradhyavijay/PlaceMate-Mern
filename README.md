@@ -14,12 +14,12 @@ A full-stack campus placement management platform with three roles: Student, Rec
 - Instant eligibility check per job, with clear reasons when not eligible
 - Skill match percentage for every job
 - Apply to jobs and track application status
-
+- Application tracker with a timeline of every round, and an upcoming rounds list
 **Recruiters**
 - Post jobs or internships with salary/stipend, deadline, eligibility rules and required skills
 - View applicants with their full profile and resume
 - Shortlist, reject or select candidates
-
+- Schedule recruitment rounds (coding test, technical, HR) with date, mode and meeting link, and mark each round passed or failed
 **Admins**
 - Review pending job postings
 - Approve, or reject with a reason
