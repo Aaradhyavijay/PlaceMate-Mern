@@ -1,7 +1,15 @@
 import { useState, useEffect } from 'react';
 import api from '../api/axios';
 
-const tabs = ['Analytics', 'Approvals', 'Students', 'Recruiters', 'Jobs', 'Applications'];
+const tabs = [
+  'Analytics',
+  'Approvals',
+  'Students',
+  'Recruiters',
+  'Companies',
+  'Jobs',
+  'Applications',
+];
 
 const statusStyles = {
   applied: 'bg-pink text-navy',
@@ -10,6 +18,7 @@ const statusStyles = {
   selected: 'bg-green-100 text-green-800',
   pending: 'bg-pink text-navy',
   approved: 'bg-green-100 text-green-800',
+  closed: 'bg-pink text-prune',
 };
 
 function Badge({ value }) {
@@ -63,6 +72,28 @@ function Table({ columns, rows, empty }) {
   );
 }
 
+function DeleteButton({ onClick, label = 'Delete' }) {
+  return (
+    <button
+      onClick={onClick}
+      className="text-xs border border-red-300 text-red-600 rounded px-2 py-1 hover:bg-red-50"
+    >
+      {label}
+    </button>
+  );
+}
+
+// Ask first, call the API, then update the list
+async function confirmAndRun(message, request, onDone) {
+  if (!window.confirm(message)) return;
+  try {
+    await request();
+    onDone();
+  } catch (err) {
+    alert(err.response?.data?.message || 'Action failed');
+  }
+}
+
 function useFetch(path) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -78,7 +109,7 @@ function useFetch(path) {
       alive = false;
     };
   }, [path]);
-  return { data, error };
+  return { data, setData, error };
 }
 
 // ---------- Analytics ----------
@@ -287,11 +318,19 @@ function Approvals() {
   );
 }
 
-// ---------- Lists ----------
+// ---------- Students ----------
 function Students() {
-  const { data, error } = useFetch('/admin/users?role=student');
+  const { data, setData, error } = useFetch('/admin/users?role=student');
   if (error) return <p className="text-red-600 text-sm">{error}</p>;
   if (!data) return <p className="text-navy">Loading...</p>;
+
+  const remove = (u) =>
+    confirmAndRun(
+      `Delete student "${u.name}"? Their profile and all their applications will be deleted too.`,
+      () => api.delete(`/admin/users/${u._id}`),
+      () => setData((d) => d.filter((x) => x._id !== u._id))
+    );
+
   return (
     <Table
       columns={[
@@ -300,6 +339,7 @@ function Students() {
         { key: 'branch', label: 'Branch' },
         { key: 'cgpa', label: 'CGPA' },
         { key: 'graduationYear', label: 'Batch' },
+        { key: 'actions', label: '', render: (r) => <DeleteButton onClick={() => remove(r)} /> },
       ]}
       rows={data}
       empty="No students yet."
@@ -307,15 +347,25 @@ function Students() {
   );
 }
 
+// ---------- Recruiters ----------
 function Recruiters() {
-  const { data, error } = useFetch('/admin/users?role=recruiter');
+  const { data, setData, error } = useFetch('/admin/users?role=recruiter');
   if (error) return <p className="text-red-600 text-sm">{error}</p>;
   if (!data) return <p className="text-navy">Loading...</p>;
+
+  const remove = (u) =>
+    confirmAndRun(
+      `Delete recruiter "${u.name}"? All jobs they posted, and the applications to those jobs, will be deleted too.`,
+      () => api.delete(`/admin/users/${u._id}`),
+      () => setData((d) => d.filter((x) => x._id !== u._id))
+    );
+
   return (
     <Table
       columns={[
         { key: 'name', label: 'Name' },
         { key: 'email', label: 'Email' },
+        { key: 'actions', label: '', render: (r) => <DeleteButton onClick={() => remove(r)} /> },
       ]}
       rows={data}
       empty="No recruiters yet."
@@ -323,10 +373,62 @@ function Recruiters() {
   );
 }
 
-function Jobs() {
-  const { data, error } = useFetch('/admin/jobs');
+// ---------- Companies ----------
+function Companies() {
+  const { data, setData, error } = useFetch('/admin/companies');
   if (error) return <p className="text-red-600 text-sm">{error}</p>;
   if (!data) return <p className="text-navy">Loading...</p>;
+
+  const remove = (c) =>
+    confirmAndRun(
+      `Delete all ${c.jobs} job(s) of "${c.company}" and their applications? This cannot be undone.`,
+      () => api.delete(`/admin/companies/${encodeURIComponent(c.company)}`),
+      () => setData((d) => d.filter((x) => x.company !== c.company))
+    );
+
+  return (
+    <Table
+      columns={[
+        { key: 'company', label: 'Company' },
+        { key: 'jobs', label: 'Jobs' },
+        { key: 'approved', label: 'Approved' },
+        {
+          key: 'actions',
+          label: '',
+          render: (r) => <DeleteButton onClick={() => remove(r)} label="Delete jobs" />,
+        },
+      ]}
+      rows={data}
+      empty="No companies yet."
+    />
+  );
+}
+
+// ---------- Jobs ----------
+function Jobs() {
+  const { data, setData, error } = useFetch('/admin/jobs');
+  if (error) return <p className="text-red-600 text-sm">{error}</p>;
+  if (!data) return <p className="text-navy">Loading...</p>;
+
+  const isClosed = (j) => j.deadline && new Date(j.deadline) < new Date();
+
+  const close = (j) =>
+    confirmAndRun(
+      `Close "${j.title}"? Students will no longer be able to apply.`,
+      () => api.put(`/admin/jobs/${j._id}/close`),
+      () =>
+        setData((d) =>
+          d.map((x) => (x._id === j._id ? { ...x, deadline: new Date().toISOString() } : x))
+        )
+    );
+
+  const remove = (j) =>
+    confirmAndRun(
+      `Delete "${j.title}" at ${j.company} and its ${j.applicationCount} application(s)?`,
+      () => api.delete(`/admin/jobs/${j._id}`),
+      () => setData((d) => d.filter((x) => x._id !== j._id))
+    );
+
   return (
     <Table
       columns={[
@@ -335,10 +437,32 @@ function Jobs() {
         { key: 'postedBy', label: 'Posted by', render: (r) => r.postedBy?.name || '-' },
         {
           key: 'approvalStatus',
-          label: 'Approval',
-          render: (r) => <Badge value={r.approvalStatus || 'pending'} />,
+          label: 'Status',
+          render: (r) => (
+            <span className="flex gap-1 flex-wrap">
+              <Badge value={r.approvalStatus || 'pending'} />
+              {isClosed(r) && <Badge value="closed" />}
+            </span>
+          ),
         },
         { key: 'applicationCount', label: 'Applications' },
+        {
+          key: 'actions',
+          label: '',
+          render: (r) => (
+            <span className="flex gap-2">
+              {!isClosed(r) && (
+                <button
+                  onClick={() => close(r)}
+                  className="text-xs border border-navy text-navy rounded px-2 py-1 hover:bg-pink"
+                >
+                  Close
+                </button>
+              )}
+              <DeleteButton onClick={() => remove(r)} />
+            </span>
+          ),
+        },
       ]}
       rows={data}
       empty="No jobs yet."
@@ -346,6 +470,7 @@ function Jobs() {
   );
 }
 
+// ---------- Applications ----------
 function Applications() {
   const { data, error } = useFetch('/admin/applications');
   if (error) return <p className="text-red-600 text-sm">{error}</p>;
@@ -364,7 +489,15 @@ function Applications() {
   );
 }
 
-const views = { Analytics, Approvals, Students, Recruiters, Jobs, Applications };
+const views = {
+  Analytics,
+  Approvals,
+  Students,
+  Recruiters,
+  Companies,
+  Jobs,
+  Applications,
+};
 
 export default function AdminDashboard() {
   const [tab, setTab] = useState('Analytics');
@@ -374,7 +507,7 @@ export default function AdminDashboard() {
     <div className="p-6 max-w-5xl mx-auto">
       <h1 className="text-2xl font-semibold text-navy">Admin Dashboard</h1>
       <p className="text-sm text-prune mb-4">
-        Manage students, recruiters, jobs, applications and placement analytics.
+        Manage students, recruiters, companies, jobs, applications and placement analytics.
       </p>
 
       <div className="flex flex-wrap gap-2 mb-6">

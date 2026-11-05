@@ -265,4 +265,92 @@ router.get('/applications', async (req, res) => {
   }
 });
 
+// ---------- Manage: close and delete ----------
+
+// Close a job (stop new applications)
+router.put('/jobs/:id/close', async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    job.deadline = new Date();
+    await job.save();
+    res.status(200).json(job);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Delete a job and its applications
+router.delete('/jobs/:id', async (req, res) => {
+  try {
+    const job = await Job.findById(req.params.id);
+    if (!job) return res.status(404).json({ message: 'Job not found' });
+    await Application.deleteMany({ job: job._id });
+    await job.deleteOne();
+    res.status(200).json({ message: 'Job deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Delete a student or recruiter account together with everything linked to it
+router.delete('/users/:id', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (user.role === 'admin') {
+      return res.status(403).json({ message: 'Admin accounts cannot be deleted here' });
+    }
+
+    if (user.role === 'student') {
+      await Application.deleteMany({ student: user._id });
+      await StudentProfile.deleteMany({ user: user._id });
+    } else if (user.role === 'recruiter') {
+      const jobs = await Job.find({ postedBy: user._id }).select('_id');
+      const jobIds = jobs.map((j) => j._id);
+      await Application.deleteMany({ job: { $in: jobIds } });
+      await Job.deleteMany({ postedBy: user._id });
+    }
+
+    await user.deleteOne();
+    res.status(200).json({ message: 'User deleted' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Companies (taken from jobs) with job counts
+router.get('/companies', async (req, res) => {
+  try {
+    const companies = await Job.aggregate([
+      {
+        $group: {
+          _id: '$company',
+          jobs: { $sum: 1 },
+          approved: { $sum: { $cond: [{ $eq: ['$approvalStatus', 'approved'] }, 1, 0] } },
+        },
+      },
+      { $project: { _id: 0, company: '$_id', jobs: 1, approved: 1 } },
+      { $sort: { company: 1 } },
+    ]);
+    res.status(200).json(companies);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
+// Delete every job of a company, with their applications
+router.delete('/companies/:name', async (req, res) => {
+  try {
+    const jobs = await Job.find({ company: req.params.name }).select('_id');
+    if (jobs.length === 0) return res.status(404).json({ message: 'Company not found' });
+    const jobIds = jobs.map((j) => j._id);
+    await Application.deleteMany({ job: { $in: jobIds } });
+    await Job.deleteMany({ _id: { $in: jobIds } });
+    res.status(200).json({ message: 'Company jobs deleted', jobs: jobIds.length });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error', error: err.message });
+  }
+});
+
 module.exports = router;

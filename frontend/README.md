@@ -25,7 +25,7 @@ A full-stack campus placement management platform with three roles: Student, Rec
 - Analytics: total students, recruiters, jobs, applications, placed students and placement percentage
 - Branch-wise placement and company-wise hiring tables
 - CSV export of placed students and a company report
-- Browse all students, recruiters, jobs and applications
+- - Browse and manage students, recruiters, companies, jobs and applications: close or delete jobs, remove users and companies.
 
 **Platform**
 - JWT authentication with role-based access control
