@@ -5,6 +5,8 @@ import api from '../api/axios';
 const inputClass =
   'border border-pink rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-mauve focus:border-navy';
 
+const strongEnough = (p) => p.length >= 8 && /[A-Za-z]/.test(p) && /\d/.test(p);
+
 export default function Register() {
   const [form, setForm] = useState({ name: '', email: '', password: '', role: 'student' });
   const [error, setError] = useState('');
@@ -17,6 +19,10 @@ export default function Register() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    if (!strongEnough(form.password)) {
+      setError('Password must be at least 8 characters with a letter and a number');
+      return;
+    }
     try {
       await api.post('/auth/register', form);
       navigate('/login');
@@ -51,15 +57,21 @@ export default function Register() {
           className={inputClass}
           required
         />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={form.password}
-          onChange={handleChange}
-          className={inputClass}
-          required
-        />
+        <div>
+          <input
+            type="password"
+            name="password"
+            placeholder="Password"
+            value={form.password}
+            onChange={handleChange}
+            className={`${inputClass} w-full`}
+            minLength={8}
+            required
+          />
+          <p className="text-xs text-prune mt-1">
+            At least 8 characters, with a letter and a number.
+          </p>
+        </div>
         <select
           name="role"
           value={form.role}

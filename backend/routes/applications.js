@@ -3,12 +3,22 @@ const Application = require('../models/application');
 const Job = require('../models/job');
 const StudentProfile = require('../models/studentProfile');
 const { checkEligibility } = require('../utils/eligibility');
+const { notifyStudent } = require('../utils/mailer');
 const { protect, authorize } = require('../middleware/auth');
 
 const router = express.Router();
 
 // Recruiter can touch only their own jobs; admin can touch any
 const ownsJob = (job, user) => user.role === 'admin' || String(job.postedBy) === user.id;
+
+const whenText = (d) =>
+  d
+    ? `${new Date(d).toLocaleString('en-IN', {
+        dateStyle: 'medium',
+        timeStyle: 'short',
+        timeZone: 'Asia/Kolkata',
+      })} IST`
+    : 'To be announced';
 
 // Student applies to a job (student id comes from the token)
 router.post('/', protect, authorize('student'), async (req, res) => {
@@ -101,11 +111,21 @@ router.put('/:id', protect, authorize('recruiter', 'admin'), async (req, res) =>
       return res.status(403).json({ message: 'You can only update applications of your own jobs' });
     }
 
+    const previousStatus = application.status;
     if (req.body.status) application.status = req.body.status;
     if (typeof req.body.note === 'string') {
       application.note = req.body.note.trim().slice(0, 500);
     }
     await application.save();
+
+    // Email the student when the status changed (fire and forget)
+    if (application.status !== previousStatus) {
+      notifyStudent(application.student, `Update on your application: ${job.title}`, [
+        `Your application for ${job.title} at ${job.company} is now: ${application.status}.`,
+        ...(application.note ? ['', `Message from the recruiter: ${application.note}`] : []),
+      ]);
+    }
+
     res.status(200).json(application);
   } catch (err) {
     if (err.name === 'ValidationError') {
@@ -151,7 +171,7 @@ function readRound(body, partial) {
   return { fields: out };
 }
 
-// Loads an application the current user may manage (the job's recruiter, or admin)
+// Loads an application (and its job) the current user may manage
 async function loadManagedApplication(req, res) {
   const application = await Application.findById(req.params.id);
   if (!application) {
@@ -163,19 +183,31 @@ async function loadManagedApplication(req, res) {
     res.status(403).json({ message: 'You can only manage applications of your own jobs' });
     return null;
   }
-  return application;
+  return { application, job };
 }
 
 // Add a round (moves an "applied" application to "shortlisted")
 router.post('/:id/rounds', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
-    const application = await loadManagedApplication(req, res);
-    if (!application) return;
+    const managed = await loadManagedApplication(req, res);
+    if (!managed) return;
+    const { application, job } = managed;
     const { error, fields } = readRound(req.body, false);
     if (error) return res.status(400).json({ message: error });
     application.rounds.push(fields);
     if (application.status === 'applied') application.status = 'shortlisted';
     await application.save();
+
+    const round = application.rounds[application.rounds.length - 1];
+    notifyStudent(application.student, `New round scheduled: ${round.name} (${job.title})`, [
+      `A new round has been scheduled for your application to ${job.title} at ${job.company}.`,
+      '',
+      `Round: ${round.name}`,
+      `When: ${whenText(round.scheduledAt)}`,
+      `Mode: ${round.mode === 'offline' ? 'In person' : 'Online'}`,
+      ...(round.location ? [`Where / link: ${round.location}`] : []),
+    ]);
+
     res.status(201).json(application);
   } catch (err) {
     res.status(500).json({ message: 'Server error', error: err.message });
@@ -185,8 +217,9 @@ router.post('/:id/rounds', protect, authorize('recruiter', 'admin'), async (req,
 // Update a round (result, date, mode, location, name)
 router.put('/:id/rounds/:roundId', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
-    const application = await loadManagedApplication(req, res);
-    if (!application) return;
+    const managed = await loadManagedApplication(req, res);
+    if (!managed) return;
+    const { application } = managed;
     const round = application.rounds.id(req.params.roundId);
     if (!round) return res.status(404).json({ message: 'Round not found' });
     const { error, fields } = readRound(req.body, true);
@@ -202,8 +235,9 @@ router.put('/:id/rounds/:roundId', protect, authorize('recruiter', 'admin'), asy
 // Remove a round
 router.delete('/:id/rounds/:roundId', protect, authorize('recruiter', 'admin'), async (req, res) => {
   try {
-    const application = await loadManagedApplication(req, res);
-    if (!application) return;
+    const managed = await loadManagedApplication(req, res);
+    if (!managed) return;
+    const { application } = managed;
     if (!application.rounds.id(req.params.roundId)) {
       return res.status(404).json({ message: 'Round not found' });
     }

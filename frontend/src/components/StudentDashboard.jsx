@@ -62,18 +62,21 @@ export default function StudentDashboard() {
   const [error, setError] = useState('');
   const [applyingId, setApplyingId] = useState(null);
   const [appliedIds, setAppliedIds] = useState([]);
+  const [savedIds, setSavedIds] = useState([]);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const studentId = user?._id || user?.id;
-        const [jobsRes, appsRes] = await Promise.all([
+        const [jobsRes, appsRes, savedRes] = await Promise.all([
           api.get('/jobs'),
           api.get(`/applications/student/${studentId}`),
+          api.get('/saved').catch(() => ({ data: [] })),
         ]);
         setJobs(jobsRes.data);
         setApplications(appsRes.data);
         setAppliedIds(appsRes.data.map((a) => a.job?._id || a.job));
+        setSavedIds(savedRes.data.map((j) => j._id));
 
         const results = await Promise.allSettled(
           jobsRes.data.map((j) => api.get(`/jobs/${j._id}/eligibility`))
@@ -111,8 +114,23 @@ export default function StudentDashboard() {
     }
   };
 
+  const toggleSave = async (jobId) => {
+    const saved = savedIds.includes(jobId);
+    try {
+      if (saved) await api.delete(`/saved/${jobId}`);
+      else await api.post(`/saved/${jobId}`);
+      setSavedIds((prev) => (saved ? prev.filter((id) => id !== jobId) : [...prev, jobId]));
+    } catch (err) {
+      alert(err.response?.data?.message || 'Could not update saved jobs');
+    }
+  };
+
   if (loading) return <p className="p-6 text-navy">Loading...</p>;
   if (error) return <p className="p-6 text-red-600">{error}</p>;
+
+  const saveLabel = (id) => (savedIds.includes(id) ? '★ Saved' : '☆ Save');
+  const saveClass =
+    'text-sm border border-navy text-navy rounded px-3 py-1 hover:bg-pink';
 
   const openEligible = jobs
     .filter(
@@ -228,7 +246,10 @@ export default function StudentDashboard() {
                     </span>
                   )}
                 </div>
-                <div className="flex justify-end mt-3">
+                <div className="flex justify-end gap-2 mt-3">
+                  <button onClick={() => toggleSave(job._id)} className={saveClass}>
+                    {saveLabel(job._id)}
+                  </button>
                   <button
                     onClick={() => handleApply(job._id)}
                     disabled={applyingId === job._id}
@@ -318,19 +339,24 @@ export default function StudentDashboard() {
                     </ul>
                   )}
                 </div>
-                <button
-                  onClick={() => handleApply(job._id)}
-                  disabled={applyingId === job._id || applied || blocked || expired}
-                  className="bg-mauve text-navy font-semibold px-4 py-2 rounded hover:bg-pink disabled:opacity-50 disabled:hover:bg-mauve shrink-0 ml-4"
-                >
-                  {applied
-                    ? 'Applied'
-                    : expired
-                    ? 'Closed'
-                    : applyingId === job._id
-                    ? 'Applying...'
-                    : 'Apply'}
-                </button>
+                <div className="flex flex-col gap-2 shrink-0 ml-4">
+                  <button
+                    onClick={() => handleApply(job._id)}
+                    disabled={applyingId === job._id || applied || blocked || expired}
+                    className="bg-mauve text-navy font-semibold px-4 py-2 rounded hover:bg-pink disabled:opacity-50 disabled:hover:bg-mauve"
+                  >
+                    {applied
+                      ? 'Applied'
+                      : expired
+                      ? 'Closed'
+                      : applyingId === job._id
+                      ? 'Applying...'
+                      : 'Apply'}
+                  </button>
+                  <button onClick={() => toggleSave(job._id)} className={saveClass}>
+                    {saveLabel(job._id)}
+                  </button>
+                </div>
               </div>
             );
           })}

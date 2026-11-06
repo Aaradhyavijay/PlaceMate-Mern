@@ -4,8 +4,9 @@ import api from '../api/axios';
 import { useAuth } from '../context/AuthContext';
 
 const menu = {
-  student: [
+    student: [
     { to: '/dashboard', label: 'Dashboard' },
+    { to: '/saved', label: 'Saved Jobs' },
     { to: '/profile', label: 'My Profile' },
   ],
   recruiter: [
