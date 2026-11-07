@@ -7,20 +7,6 @@ A full-stack campus placement management platform with three roles: Student, Rec
 
 > The backend runs on a free Render instance, so the first request after a period of inactivity can take 30-50 seconds.
 
-## Screenshots
-
-| Home | Student dashboard |
-|------|-------------------|
-| ![Home](docs/screenshots/home.png) | ![Student dashboard](docs/screenshots/student-dashboard.png) |
-
-| Recruiter: applicants | Application tracker |
-|-----------------------|---------------------|
-| ![Recruiter applicants](docs/screenshots/recruiter-applicants.png) | ![Application tracker](docs/screenshots/rounds.png) |
-
-| Admin analytics |
-|-----------------|
-| ![Admin analytics](docs/screenshots/admin-analytics.png) |
-
 ## Features
 
 **Students**
@@ -74,14 +60,13 @@ PlaceMate/
 │   ├── utils/         # eligibility engine, mailer
 │   ├── seedJobs.js    # optional sample jobs
 │   └── server.js
-├── frontend/
-│   └── src/
-│       ├── api/        # axios instance
-│       ├── components/ # layout, dashboards, job form, rounds, skill picker
-│       ├── context/    # auth context
-│       ├── pages/      # home, login, register, dashboard, profile, saved, post job
-│       └── utils/
-└── docs/screenshots/
+└── frontend/
+    └── src/
+        ├── api/        # axios instance
+        ├── components/ # layout, dashboards, job form, rounds, skill picker
+        ├── context/    # auth context
+        ├── pages/      # home, login, register, dashboard, profile, saved, post job
+        └── utils/
 ```
 
 ## Run Locally
